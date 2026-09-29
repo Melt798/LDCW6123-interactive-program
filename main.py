@@ -1,12 +1,10 @@
-import json
 import os
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 
-DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-TRIP_HISTORY_FILE = os.path.join(DATA_DIR, "trip_history.json")
-FOOD_HISTORY_FILE = os.path.join(DATA_DIR, "food_order_history.json")
+TRIP_HISTORY = []
+FOOD_HISTORY = []
 PRICING_PLANS = {
     "1": {"name": "Bolt Standard", "base": Decimal("3.00"), "per_km": Decimal("1.25"), "per_min": Decimal("0.25")},
     "2": {"name": "Bolt Green (EV)", "base": Decimal("3.50"), "per_km": Decimal("1.35"), "per_min": Decimal("0.25")},
@@ -77,35 +75,12 @@ def apply_promo_code(code, fare):
     return False, fare
 
 
-def load_history(path, label):
-    try:
-        with open(path, "r", encoding="utf-8") as history_file:
-            records = json.load(history_file)
-        if not isinstance(records, list) or not all(isinstance(record, dict) for record in records):
-            raise ValueError("History must be a list of records.")
-        return records
-    except FileNotFoundError:
-        return []
-    except (OSError, json.JSONDecodeError, ValueError) as error:
-        print(f"Could not read {label} ({error}). Starting with an empty history.")
-        return []
-
-
-def save_history(path, records, label):
-    try:
-        with open(path, "w", encoding="utf-8") as history_file:
-            json.dump(records, history_file, indent=2)
-    except OSError as error:
-        print(f"Could not save {label}: {error}")
-
-
 def display_trip_history():
-    records = load_history(TRIP_HISTORY_FILE, "trip history")
     print("\n------------- PAST TRIP HISTORY -------------")
-    if not records:
-        print("No confirmed trips found.")
+    if not TRIP_HISTORY:
+        print("No confirmed trips found in this session.")
     else:
-        for index, record in enumerate(records, start=1):
+        for index, record in enumerate(TRIP_HISTORY, start=1):
             print(f"{index}. {record['service']} | {record['distance']} km | "
                   f"{record['duration']} mins | RM {record['fare']}")
             if record.get("date"):
@@ -115,12 +90,11 @@ def display_trip_history():
 
 
 def display_food_history():
-    records = load_history(FOOD_HISTORY_FILE, "food order history")
     print("\n----------- PAST FOOD ORDER HISTORY -----------")
-    if not records:
-        print("No confirmed food orders found.")
+    if not FOOD_HISTORY:
+        print("No confirmed food orders found in this session.")
     else:
-        for index, record in enumerate(records, start=1):
+        for index, record in enumerate(FOOD_HISTORY, start=1):
             print(f"{index}. Basket RM {record['basket']} | Delivery RM {record['delivery_fee']} | "
                   f"Small order RM {record['small_order_fee']} | Total RM {record['total']}")
             if record.get("date"):
@@ -178,15 +152,13 @@ def estimate_ride_fare():
     print("-----------------------------------------------")
 
     if read_confirmation():
-        records = load_history(TRIP_HISTORY_FILE, "trip history")
-        records.append({
+        TRIP_HISTORY.append({
             "service": selected["name"],
             "distance": f"{distance:.2f}",
             "duration": f"{duration:.2f}",
             "fare": f"{total_fare:.2f}",
             "date": datetime.now().astimezone().isoformat(timespec="seconds"),
         })
-        save_history(TRIP_HISTORY_FILE, records, "trip history")
         print("Booking Confirmed! Driver assigned nearby.\n")
     else:
         print("Booking cancelled.\n")
@@ -210,15 +182,13 @@ def estimate_food_delivery():
     print("-----------------------------------------------")
 
     if read_confirmation("Confirm food order? (1 for Yes, 0 for No): "):
-        records = load_history(FOOD_HISTORY_FILE, "food order history")
-        records.append({
+        FOOD_HISTORY.append({
             "basket": f"{basket_total:.2f}",
             "delivery_fee": f"{delivery_fee.quantize(Decimal('0.01')):.2f}",
             "small_order_fee": f"{small_order_fee:.2f}",
             "total": f"{final_payable:.2f}",
             "date": datetime.now().astimezone().isoformat(timespec="seconds"),
         })
-        save_history(FOOD_HISTORY_FILE, records, "food order history")
         print("Food order confirmed.\n")
     else:
         print("Food order cancelled.\n")
@@ -247,7 +217,7 @@ def main():
             display_food_history()
         else:
             clear_screen()
-            print("\nThank you for choosing Bolt. Moving forward together!")
+            print("\nThank you for choosing Bolt. Session history will be cleared when the program exits.")
             break
 
 
