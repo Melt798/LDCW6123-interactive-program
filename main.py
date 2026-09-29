@@ -1,3 +1,14 @@
+"""
+====================================================================
+LDCW6123 - Fundamentals of Digital Competence for Programmer
+Group Project: Part 2 - Interactive Program (Bolt On-Demand Services)
+
+Description:
+    An interactive simulation for Bolt Ride-Hailing & Food Delivery services,
+    featuring fare estimation, surge pricing, promo code validation, and 
+    session history tracking.
+====================================================================
+"""
 import os
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -104,6 +115,10 @@ def display_food_history():
 
 
 def estimate_ride_fare():
+    """
+    Calculates estimated ride fare based on distance, duration, service tier,
+    peak hour multiplier, and optional promo codes.
+    """
     print("\n--- Bolt Ride Booking ---")
     print("Select Ride Option:")
     print("  1. Bolt Standard (Eco/Sedan)")
